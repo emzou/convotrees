@@ -1,72 +1,50 @@
 document.addEventListener('DOMContentLoaded', () => {
     let withReplies = []; // Store trees with replies
-    let currentPage = 1;
-    const postsPerPage = 50;
+    let currentPage = 1; // Track current page
+    const postsPerPage = 50; // Number of posts per page
+
+    console.log("Prev Button Exists:", document.getElementById('prev-page') !== null);
+    console.log("Next Button Exists:", document.getElementById('next-page') !== null);
 
     // Fetch and process JSON data
-    // Fetch and process JSON data
-	fetch('11_17_split1-6ctrees.json')
-    	.then(response => response.json())
-    	.then(data => {
-        	withReplies = removeDuplicateTrees(
-            	data
-                	.filter(tree => tree.Reply_Count > 0)
-                	.map(tree => {
-                    // Handle NaN in Poster_Id
-                    if (!tree.Poster_Id || tree.Poster_Id === 'NaN') {
-                        tree.Poster_Id = 'Unknown'; // Replace with 'Unknown' or other placeholder
-                    }
-                    return tree;
-                })
-        );
+    fetch('11_17_split1-6ctrees.json')
+        .then(response => response.json())
+        .then(data => {
+            withReplies = removeDuplicateTrees(
+                data
+                    .filter(tree => tree.Reply_Count > 0)
+                    .map(tree => {
+                        // Handle NaN in Poster_Id
+                        if (!tree.Poster_Id || tree.Poster_Id === 'NaN') {
+                            tree.Poster_Id = 'Unknown'; // Replace with 'Unknown' or other placeholder
+                        }
+                        return tree;
+                    })
+            );
 
-        // Initial render with pagination
-        renderTreesWithPagination(withReplies, 'conversation-trees');
-    })
-    .catch(error => console.error('Error loading JSON:', error));
-
-
-    document.getElementById('date-filter').addEventListener('change', (event) => {
-        const selectedDate = event.target.value;
-        const filteredData = filterByDate(withReplies, selectedDate);
-
-        renderTreesWithPagination(filteredData, 'conversation-trees');
-    });
-
-    function filterByDate(trees, date) {
-        // Ensure the date is valid
-        if (!date) return trees;
-    
-        return trees.filter(tree => {
-            const treeDate = new Date(tree.Date);
-            const filterDate = new Date(date);
-            return treeDate >= filterDate;
-        });
-    }
-
-    // Sort by Replies
-    document.getElementById('sort-replies').addEventListener('click', () => {
-        const sortedData = sortByReplies([...withReplies]);
-        currentPage = 1; // Reset to first page
-        renderTreesWithPagination(sortedData, 'conversation-trees');
-    });
-
-    function sortByReplies(trees) {
-        return trees.sort((a, b) => b.Reply_Count - a.Reply_Count);
-    }
+            // Initial render with pagination
+            renderTreesWithPagination(withReplies, 'conversation-trees');
+        })
+        .catch(error => console.error('Error loading JSON:', error));
 
     // Pagination Controls
     document.getElementById('prev-page').addEventListener('click', () => {
         if (currentPage > 1) {
             currentPage--;
+            console.log("Previous button clicked. Current page:", currentPage);
             renderTreesWithPagination(withReplies, 'conversation-trees');
+        } else {
+            console.warn("Already on the first page!");
         }
     });
 
     document.getElementById('next-page').addEventListener('click', () => {
         if ((currentPage * postsPerPage) < withReplies.length) {
             currentPage++;
+            console.log("Next button clicked. Current page:", currentPage);
             renderTreesWithPagination(withReplies, 'conversation-trees');
+        } else {
+            console.warn("Already on the last page!");
         }
     });
 
@@ -85,20 +63,23 @@ document.addEventListener('DOMContentLoaded', () => {
     function renderTreesWithPagination(trees, containerId) {
         const container = document.getElementById(containerId);
         container.innerHTML = ''; // Clear the container
-
+    
         const startIndex = (currentPage - 1) * postsPerPage;
         const endIndex = Math.min(startIndex + postsPerPage, trees.length);
-
+    
         const paginatedTrees = trees.slice(startIndex, endIndex);
         renderTrees(paginatedTrees, containerId);
-
-        const paginationInfo = document.getElementById('pagination-info');
+    
+        const paginationInfo = document.getElementById('pagination-summary'); // Updated ID
         paginationInfo.textContent = `Showing ${startIndex + 1} to ${endIndex} of ${trees.length}`;
     }
+    
 
     // Render Trees
     function renderTrees(trees, containerId) {
         const container = document.getElementById(containerId);
+        console.log("Rendering the following trees:", trees); // Debug the trees being rendered
+
         trees.forEach(tree => {
             const treeElement = document.createElement('div');
             treeElement.className = 'tree';
@@ -220,7 +201,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Utility: Censor Slurs
     function censorSlurs(text) {
         const slurs = [
             "nigger", "spic", "chink", "kike", "gook",
